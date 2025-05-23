@@ -1,43 +1,29 @@
-#
-# Copyright (C) 2021-2022 by TeamYukki@Github, < https://github.com/TeamYukki >.
-#
-# This file is part of < https://github.com/TeamYukki/YukkiMusicBot > project,
-# and is released under the "GNU v3.0 License Agreement".
-# Please see < https://github.com/TeamYukki/YukkiMusicBot/blob/master/LICENSE >
-#
-# All rights reserved.
+from mongita import MongitaClientDisk
 
-from motor.motor_asyncio import AsyncIOMotorClient as _mongo_client_
-from pymongo import MongoClient
-from pyrogram import Client
+Создаем локальный клиент Mongita
 
-import config
+client = MongitaClientDisk()
 
-from ..logging import LOGGER
+Используем базу данных "vevomusic"
 
-TEMP_MONGODB = "mongodb+srv://shikhar:shikhar@cluster0.6xzlh.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+db = client.vevomusic
+
+Пример коллекций (можно расширить по необходимости)
+
+chats_col = db.chats users_col = db.users sudos_col = db.sudos
+
+Пример функций (используйте по назначению)
+
+def get_chat(chat_id): return chats_col.find_one({"chat_id": chat_id})
+
+def save_chat(chat_id, data): chats_col.update_one({"chat_id": chat_id}, {"$set": data}, upsert=True)
+
+def get_user(user_id): return users_col.find_one({"user_id": user_id})
+
+def save_user(user_id, data): users_col.update_one({"user_id": user_id}, {"$set": data}, upsert=True)
+
+def get_sudoers(): return [doc["user_id"] for doc in sudos_col.find()]
+
+def add_sudo(user_id): if not sudos_col.find_one({"user_id": user_id}): sudos_col.insert_one({"user_id": user_id})
 
 
-if config.MONGO_DB_URI is None:
-    LOGGER(__name__).warning(
-        "No MONGO DB URL found.. Your Bot will work on Yukki's Database"
-    )
-    temp_client = Client(
-        "Yukki",
-        bot_token=config.BOT_TOKEN,
-        api_id=config.API_ID,
-        api_hash=config.API_HASH,
-    )
-    temp_client.start()
-    info = temp_client.get_me()
-    username = info.username
-    temp_client.stop()
-    _mongo_async_ = _mongo_client_(TEMP_MONGODB)
-    _mongo_sync_ = MongoClient(TEMP_MONGODB)
-    mongodb = _mongo_async_[username]
-    pymongodb = _mongo_sync_[username]
-else:
-    _mongo_async_ = _mongo_client_(config.MONGO_DB_URI)
-    _mongo_sync_ = MongoClient(config.MONGO_DB_URI)
-    mongodb = _mongo_async_.Yukki
-    pymongodb = _mongo_sync_.Yukki
